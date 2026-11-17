@@ -1,0 +1,6 @@
+{
+  "name": "RankFlow AI",
+  "description": "Enterprise SEO & Client Automation Suite for Shri Shyam Consulting",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

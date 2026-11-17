@@ -1,0 +1,408 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Authenticated user account profile stored privately under users/{userId}.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "displayName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "minLength": 3,
+          "maxLength": 180
+        },
+        "photoURL": {
+          "type": "string",
+          "maxLength": 500
+        },
+        "webhookUrl": {
+          "type": "string",
+          "maxLength": 400
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["uid", "displayName", "email", "createdAt", "updatedAt"]
+    },
+    "ClientLead": {
+      "title": "ClientLead",
+      "description": "VIP B2B client inquiry captured via the Client Fast-Track Portal.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 64,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "ownerId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "companyName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 160
+        },
+        "contactName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "email": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 180
+        },
+        "phone": {
+          "type": "string",
+          "minLength": 4,
+          "maxLength": 40
+        },
+        "region": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 100
+        },
+        "serviceTrack": {
+          "type": "string",
+          "enum": ["HR & Manpower Hiring", "AI Business Automation"]
+        },
+        "requirement": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1000
+        },
+        "priorityTag": {
+          "type": "string",
+          "enum": ["Priority #1 VIP"]
+        },
+        "status": {
+          "type": "string",
+          "enum": ["Instant Proposal Sent", "AI Screening Scheduled", "Discovery Call Booked"]
+        },
+        "dispatchedChannels": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "whatsappPreview": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1500
+        },
+        "emailSubject": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 240
+        },
+        "emailBody": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 3000
+        },
+        "createdAtLabel": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 60
+        },
+        "webhookSynced": {
+          "type": "boolean"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "ownerId",
+        "companyName",
+        "contactName",
+        "email",
+        "phone",
+        "region",
+        "serviceTrack",
+        "requirement",
+        "priorityTag",
+        "status",
+        "dispatchedChannels",
+        "whatsappPreview",
+        "emailSubject",
+        "emailBody",
+        "createdAtLabel",
+        "webhookSynced",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "KeywordRank": {
+      "title": "KeywordRank",
+      "description": "Tracked search keyword and SERP position for Shri Shyam Consulting.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 64,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "ownerId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "keyword": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "category": {
+          "type": "string",
+          "enum": ["HR Staffing", "AI Automation", "Compliance"]
+        },
+        "rank": {
+          "type": "integer"
+        },
+        "previousRank": {
+          "type": "integer"
+        },
+        "monthlyVolume": {
+          "type": "integer"
+        },
+        "targetUrl": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 240
+        },
+        "intent": {
+          "type": "string",
+          "enum": ["High Commercial", "Transactional", "Local B2B"]
+        },
+        "lastUpdated": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 60
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "ownerId",
+        "keyword",
+        "category",
+        "rank",
+        "previousRank",
+        "monthlyVolume",
+        "targetUrl",
+        "intent",
+        "lastUpdated",
+        "createdAt"
+      ]
+    },
+    "SeoPackage": {
+      "title": "SeoPackage",
+      "description": "AI-generated SEO metadata, LSI keywords, and JSON-LD schema snippet.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 64,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "ownerId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "serviceName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 160
+        },
+        "targetLocation": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "category": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "pageTitle": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "metaDescription": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "lsiKeywords": {
+          "type": "array"
+        },
+        "urlSlug": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "schemaJsonLd": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 6000
+        },
+        "createdAtLabel": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 60
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "ownerId",
+        "serviceName",
+        "targetLocation",
+        "category",
+        "pageTitle",
+        "metaDescription",
+        "lsiKeywords",
+        "urlSlug",
+        "schemaJsonLd",
+        "createdAtLabel",
+        "createdAt"
+      ]
+    },
+    "ChecklistItem": {
+      "title": "ChecklistItem",
+      "description": "Local SEO & Backlink checklist task tracked by the user.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 64,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "ownerId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 600
+        },
+        "category": {
+          "type": "string",
+          "enum": [
+            "Google Business Profile",
+            "Local & PAN India Directories",
+            "Automated Blog & Backlinks"
+          ]
+        },
+        "region": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "cadence": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 60
+        },
+        "impact": {
+          "type": "string",
+          "enum": ["High", "Medium"]
+        },
+        "completed": {
+          "type": "boolean"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "ownerId",
+        "title",
+        "description",
+        "category",
+        "region",
+        "cadence",
+        "impact",
+        "completed",
+        "createdAt",
+        "updatedAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "Private authenticated user profile document."
+    },
+    "/users/{userId}/leads/{leadId}": {
+      "schema": { "$ref": "#/entities/ClientLead" },
+      "description": "Private VIP CRM leads scoped to the signed-in user."
+    },
+    "/users/{userId}/keywords/{keywordId}": {
+      "schema": { "$ref": "#/entities/KeywordRank" },
+      "description": "Tracked SEO keyword ranks scoped to the signed-in user."
+    },
+    "/users/{userId}/seoPackages/{seoId}": {
+      "schema": { "$ref": "#/entities/SeoPackage" },
+      "description": "Generated SEO metadata & Schema packages scoped to the signed-in user."
+    },
+    "/users/{userId}/checklist/{itemId}": {
+      "schema": { "$ref": "#/entities/ChecklistItem" },
+      "description": "Local SEO & backlink checklist tasks scoped to the signed-in user."
+    }
+  }
+}

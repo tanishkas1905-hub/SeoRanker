@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { onAuthStateChanged, signOut, type User } from 'firebase/auth';
 import {
   BarChart3,
   CheckSquare,
@@ -6,15 +7,30 @@ import {
   ExternalLink,
   FileText,
   Globe,
+  LogIn,
+  LogOut,
   MapPin,
   Menu,
   Moon,
   Send,
   Sparkles,
   Sun,
+  UserPlus,
   Users,
   X,
 } from 'lucide-react';
+import { auth } from './firebase';
+import {
+  ensureUserWorkspace,
+  saveChecklistItemToFirestore,
+  saveKeywordToFirestore,
+  saveLeadToFirestore,
+  saveSeoPackageToFirestore,
+  saveWebhookUrlToFirestore,
+  subscribeUserCollections,
+  toggleChecklistInFirestore,
+  updateLeadStatusInFirestore,
+} from './services/firestoreSync';
 import {
   INITIAL_CHECKLIST,
   INITIAL_KEYWORDS,
@@ -42,6 +58,7 @@ import { CrmPipeline } from './components/CrmPipeline';
 import { LocalSeoChecklist } from './components/LocalSeoChecklist';
 import { SeoPerformanceReport } from './components/SeoPerformanceReport';
 import { OfflineIndicator, PWAInstallButton } from './components/PWAInstallButton';
+import { GoogleAuthModal } from './components/GoogleAuthModal';
 
 const STORAGE_KEYS = {
   theme: 'rankflow_theme_v1',
@@ -96,6 +113,12 @@ export default function App() {
 
   const [toasts, setToasts] = useState<ToastItem[]>([]);
 
+  const [authUser, setAuthUser] = useState<User | null>(null);
+  const [isAuthReady, setIsAuthReady] = useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [authModalTab, setAuthModalTab] = useState<'signin' | 'signup'>('signin');
+  const [fatalSyncError, setFatalSyncError] = useState<Error | null>(null);
+
   useEffect(() => {
     const root = document.documentElement;
     if (isDark) {
@@ -107,20 +130,71 @@ export default function App() {
   }, [isDark]);
 
   useEffect(() => {
+    let active = true;
+    let unsubCollections: (() => void) | null = null;
+
+    const unsubAuth = onAuthStateChanged(auth, async (user) => {
+      unsubCollections?.();
+      unsubCollections = null;
+      if (!active) return;
+
+      setAuthUser(user);
+      setAvatarFailed(false);
+
+      if (user) {
+        try {
+          const { webhookUrl: cloudWebhook } = await ensureUserWorkspace(user);
+          if (!active) return;
+          setWebhookUrl(cloudWebhook);
+          unsubCollections = subscribeUserCollections(user.uid, {
+            onLeads: (cloudLeads) => setLeads(cloudLeads),
+            onKeywords: (cloudKeywords) => setKeywords(cloudKeywords),
+            onSeoPackages: (cloudSeo) => setSeoHistory(cloudSeo),
+            onChecklist: (cloudChecklist) => setChecklist(cloudChecklist),
+          });
+        } catch (err) {
+          if (active) {
+            setFatalSyncError(err instanceof Error ? err : new Error(String(err)));
+          }
+        } finally {
+          if (active) setIsAuthReady(true);
+        }
+      } else {
+        setKeywords(loadStored(STORAGE_KEYS.keywords, INITIAL_KEYWORDS));
+        setLeads(loadStored(STORAGE_KEYS.leads, INITIAL_LEADS));
+        setChecklist(loadStored(STORAGE_KEYS.checklist, INITIAL_CHECKLIST));
+        setSeoHistory(loadStored(STORAGE_KEYS.seoHistory, [INITIAL_SEO_SAMPLE]));
+        setWebhookUrl(localStorage.getItem(STORAGE_KEYS.webhookUrl) || '');
+        setIsAuthReady(true);
+      }
+    });
+
+    return () => {
+      active = false;
+      unsubCollections?.();
+      unsubAuth();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (authUser) return;
     localStorage.setItem(STORAGE_KEYS.keywords, JSON.stringify(keywords));
-  }, [keywords]);
+  }, [keywords, authUser]);
 
   useEffect(() => {
+    if (authUser) return;
     localStorage.setItem(STORAGE_KEYS.leads, JSON.stringify(leads));
-  }, [leads]);
+  }, [leads, authUser]);
 
   useEffect(() => {
+    if (authUser) return;
     localStorage.setItem(STORAGE_KEYS.checklist, JSON.stringify(checklist));
-  }, [checklist]);
+  }, [checklist, authUser]);
 
   useEffect(() => {
+    if (authUser) return;
     localStorage.setItem(STORAGE_KEYS.seoHistory, JSON.stringify(seoHistory));
-  }, [seoHistory]);
+  }, [seoHistory, authUser]);
 
   const addToast = useCallback(
     (title: string, description?: string, variant: 'success' | 'error' | 'info' = 'success') => {
@@ -149,13 +223,22 @@ export default function App() {
 
   const leadsTodayCount = useMemo(() => 20 + leads.length, [leads.length]);
 
-  const handleAddKeyword = (kw: Omit<KeywordRank, 'id' | 'lastUpdated'>) => {
+  const handleAddKeyword = async (kw: Omit<KeywordRank, 'id' | 'lastUpdated'>) => {
     const created: KeywordRank = {
       ...kw,
       id: `kw-${Date.now()}`,
       lastUpdated: 'Just now',
     };
-    setKeywords((prev) => [created, ...prev]);
+    if (authUser) {
+      try {
+        await saveKeywordToFirestore(authUser.uid, created);
+      } catch (err) {
+        setFatalSyncError(err instanceof Error ? err : new Error(String(err)));
+        return;
+      }
+    } else {
+      setKeywords((prev) => [created, ...prev]);
+    }
     addToast('Keyword Added to Tracker', `Monitoring "${created.keyword}" at Rank #${created.rank}.`);
   };
 
@@ -199,7 +282,17 @@ export default function App() {
     if (webhookUrl) {
       synced = await forwardLeadToWebhook(newLead);
     }
-    setLeads((prev) => [{ ...newLead, webhookSynced: synced }, ...prev]);
+    const leadRecord: ClientLead = { ...newLead, webhookSynced: synced };
+    if (authUser) {
+      try {
+        await saveLeadToFirestore(authUser.uid, leadRecord);
+      } catch (err) {
+        setFatalSyncError(err instanceof Error ? err : new Error(String(err)));
+        return;
+      }
+    } else {
+      setLeads((prev) => [leadRecord, ...prev]);
+    }
     setIsMobilePortalOpen(false);
     addToast(
       'VIP Client Routed to CRM!',
@@ -207,14 +300,32 @@ export default function App() {
     );
   };
 
-  const handleUpdateLeadStatus = (leadId: string, status: LeadAutomationStatus) => {
-    setLeads((prev) => prev.map((l) => (l.id === leadId ? { ...l, status } : l)));
+  const handleUpdateLeadStatus = async (leadId: string, status: LeadAutomationStatus) => {
+    if (authUser) {
+      try {
+        await updateLeadStatusInFirestore(authUser.uid, leadId, status);
+      } catch (err) {
+        setFatalSyncError(err instanceof Error ? err : new Error(String(err)));
+        return;
+      }
+    } else {
+      setLeads((prev) => prev.map((l) => (l.id === leadId ? { ...l, status } : l)));
+    }
     addToast('CRM Status Updated', `Lead ${leadId} moved to "${status}".`);
   };
 
-  const handleSaveWebhookUrl = (url: string) => {
+  const handleSaveWebhookUrl = async (url: string) => {
     setWebhookUrl(url);
-    localStorage.setItem(STORAGE_KEYS.webhookUrl, url);
+    if (authUser) {
+      try {
+        await saveWebhookUrlToFirestore(authUser.uid, url);
+      } catch (err) {
+        setFatalSyncError(err instanceof Error ? err : new Error(String(err)));
+        return;
+      }
+    } else {
+      localStorage.setItem(STORAGE_KEYS.webhookUrl, url);
+    }
     addToast(
       url ? 'Make.com Webhook Saved' : 'Webhook Cleared',
       url
@@ -277,16 +388,79 @@ export default function App() {
     addToast('Leads Exported to CSV', `${leads.length} VIP CRM records downloaded.`);
   };
 
-  const handleToggleChecklist = (id: string) => {
-    setChecklist((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, completed: !item.completed } : item))
-    );
+  const handleToggleChecklist = async (id: string) => {
+    const target = checklist.find((item) => item.id === id);
+    if (!target) return;
+    if (authUser) {
+      try {
+        await toggleChecklistInFirestore(authUser.uid, id, !target.completed);
+      } catch (err) {
+        setFatalSyncError(err instanceof Error ? err : new Error(String(err)));
+      }
+    } else {
+      setChecklist((prev) =>
+        prev.map((item) => (item.id === id ? { ...item, completed: !item.completed } : item))
+      );
+    }
   };
 
-  const handleAddChecklistItem = (item: Omit<ChecklistItem, 'id' | 'completed'>) => {
-    setChecklist((prev) => [{ ...item, id: `chk-${Date.now()}`, completed: false }, ...prev]);
+  const handleAddChecklistItem = async (item: Omit<ChecklistItem, 'id' | 'completed'>) => {
+    const created: ChecklistItem = { ...item, id: `chk-${Date.now()}`, completed: false };
+    if (authUser) {
+      try {
+        await saveChecklistItemToFirestore(authUser.uid, created);
+      } catch (err) {
+        setFatalSyncError(err instanceof Error ? err : new Error(String(err)));
+        return;
+      }
+    } else {
+      setChecklist((prev) => [created, ...prev]);
+    }
     addToast('SEO Task Added', item.title);
   };
+
+  const handleSeoGenerated = async (pkg: SeoPackage) => {
+    if (authUser) {
+      try {
+        await saveSeoPackageToFirestore(authUser.uid, pkg);
+      } catch (err) {
+        setFatalSyncError(err instanceof Error ? err : new Error(String(err)));
+      }
+    } else {
+      setSeoHistory((prev) => [pkg, ...prev]);
+    }
+  };
+
+  const handleOpenAuthModal = (tab: 'signin' | 'signup') => {
+    setAuthModalTab(tab);
+    setIsAuthModalOpen(true);
+    setIsMobileSidebarOpen(false);
+  };
+
+  const handleSignOut = async () => {
+    try {
+      await signOut(auth);
+      setIsMobileSidebarOpen(false);
+      addToast('Signed out of Google Workspace', 'Switched back to local browser workspace.', 'info');
+    } catch (err) {
+      addToast(
+        'Sign-out failed',
+        err instanceof Error ? err.message : 'Unable to sign out right now.',
+        'error'
+      );
+    }
+  };
+
+  if (fatalSyncError) {
+    throw fatalSyncError;
+  }
+
+  const userInitials = (authUser?.displayName || authUser?.email || 'SC')
+    .split(/[\s@]+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() || '')
+    .join('');
 
   const navItems: readonly { id: NavSection; label: string; icon: typeof BarChart3 }[] = [
     { id: 'dashboard', label: 'Overview & Rankings', icon: BarChart3 },
@@ -361,28 +535,74 @@ export default function App() {
             </a>
           </div>
 
-          <div className="flex items-center gap-3 pt-2 border-t border-slate-200 dark:border-slate-800">
-            {!avatarFailed ? (
-              <img
-                src="/src/assets/images/avatar_agency_lead_1794911593753.jpg"
-                alt="Managing Director portrait"
-                referrerPolicy="no-referrer"
-                onError={() => setAvatarFailed(true)}
-                className="w-9 h-9 rounded-full object-cover border border-slate-200 dark:border-slate-700 shrink-0"
-              />
+          <div className="pt-3 border-t border-slate-200 dark:border-slate-800 space-y-2.5">
+            {authUser ? (
+              <>
+                <div className="flex items-center gap-3">
+                  {authUser.photoURL && !avatarFailed ? (
+                    <img
+                      src={authUser.photoURL}
+                      alt={authUser.displayName || 'Workspace user avatar'}
+                      referrerPolicy="no-referrer"
+                      onError={() => setAvatarFailed(true)}
+                      className="w-9 h-9 rounded-full object-cover border border-slate-200 dark:border-slate-700 shrink-0"
+                    />
+                  ) : (
+                    <div className="w-9 h-9 rounded-full bg-blue-600 text-white text-xs font-semibold flex items-center justify-center shrink-0">
+                      {userInitials || 'SC'}
+                    </div>
+                  )}
+                  <div className="min-w-0">
+                    <p className="text-xs font-semibold text-slate-900 dark:text-slate-100 truncate">
+                      {authUser.displayName || 'Workspace Member'}
+                    </p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                      {authUser.email || 'Cloud Synced'}
+                    </p>
+                    <p className="text-[11px] font-medium text-emerald-600 dark:text-emerald-400 mt-0.5">
+                      Cloud Synced · Firestore
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleSignOut}
+                  className="w-full flex items-center justify-center gap-2 px-3 py-2 text-xs font-medium text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors whitespace-nowrap shrink-0"
+                >
+                  <LogOut className="w-3.5 h-3.5" />
+                  <span>Sign Out</span>
+                </button>
+              </>
             ) : (
-              <div className="w-9 h-9 rounded-full bg-blue-600 text-white text-xs font-semibold flex items-center justify-center shrink-0">
-                RS
+              <div className="space-y-2">
+                <div>
+                  <p className="text-xs font-semibold text-slate-800 dark:text-slate-200">
+                    Cloud Workspace Sync
+                  </p>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                    Guest Mode · Local Browser Storage
+                  </p>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleOpenAuthModal('signin')}
+                    className="inline-flex items-center justify-center gap-1.5 px-2.5 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors whitespace-nowrap shrink-0"
+                  >
+                    <LogIn className="w-3.5 h-3.5" />
+                    <span>Sign In</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleOpenAuthModal('signup')}
+                    className="inline-flex items-center justify-center gap-1.5 px-2.5 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors whitespace-nowrap shrink-0"
+                  >
+                    <UserPlus className="w-3.5 h-3.5" />
+                    <span>Sign Up</span>
+                  </button>
+                </div>
               </div>
             )}
-            <div className="min-w-0">
-              <p className="text-xs font-semibold text-slate-900 dark:text-slate-100 truncate">
-                Rajesh Sharma
-              </p>
-              <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
-                Managing Partner · PAN India
-              </p>
-            </div>
           </div>
         </div>
       </aside>
@@ -435,6 +655,63 @@ export default function App() {
                 );
               })}
             </nav>
+
+            <div className="p-4 border-t border-slate-200 dark:border-slate-800 space-y-3">
+              {authUser ? (
+                <div className="space-y-2.5">
+                  <div className="flex items-center gap-3">
+                    {authUser.photoURL && !avatarFailed ? (
+                      <img
+                        src={authUser.photoURL}
+                        alt={authUser.displayName || 'Workspace user avatar'}
+                        referrerPolicy="no-referrer"
+                        onError={() => setAvatarFailed(true)}
+                        className="w-8 h-8 rounded-full object-cover border border-slate-200 dark:border-slate-700 shrink-0"
+                      />
+                    ) : (
+                      <div className="w-8 h-8 rounded-full bg-blue-600 text-white text-xs font-semibold flex items-center justify-center shrink-0">
+                        {userInitials || 'SC'}
+                      </div>
+                    )}
+                    <div className="min-w-0">
+                      <p className="text-xs font-semibold text-slate-900 dark:text-slate-100 truncate">
+                        {authUser.displayName || 'Workspace Member'}
+                      </p>
+                      <p className="text-[11px] text-emerald-600 dark:text-emerald-400 truncate">
+                        Cloud Synced · {authUser.email}
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleSignOut}
+                    className="w-full flex items-center justify-center gap-2 px-3 py-2 text-xs font-medium text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors whitespace-nowrap shrink-0"
+                  >
+                    <LogOut className="w-3.5 h-3.5" />
+                    <span>Sign Out</span>
+                  </button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleOpenAuthModal('signin')}
+                    className="inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors whitespace-nowrap shrink-0"
+                  >
+                    <LogIn className="w-3.5 h-3.5" />
+                    <span>Sign In</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleOpenAuthModal('signup')}
+                    className="inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors whitespace-nowrap shrink-0"
+                  >
+                    <UserPlus className="w-3.5 h-3.5" />
+                    <span>Sign Up</span>
+                  </button>
+                </div>
+              )}
+            </div>
           </aside>
         </div>
       )}
@@ -486,6 +763,29 @@ export default function App() {
               <Download className="w-3.5 h-3.5" />
               <span>Export Leads to CSV</span>
             </button>
+
+            {isAuthReady && !authUser && (
+              <button
+                type="button"
+                onClick={() => handleOpenAuthModal('signin')}
+                className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-white bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 dark:text-slate-900 rounded-lg transition-colors whitespace-nowrap shrink-0"
+              >
+                <LogIn className="w-3.5 h-3.5" />
+                <span>Google Sign In</span>
+              </button>
+            )}
+
+            {isAuthReady && authUser && (
+              <button
+                type="button"
+                onClick={handleSignOut}
+                title={`Signed in as ${authUser.email || authUser.displayName || 'Google user'}`}
+                className="hidden md:inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors whitespace-nowrap shrink-0"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+                <span>Sign Out</span>
+              </button>
+            )}
 
             <button
               type="button"
@@ -646,7 +946,7 @@ export default function App() {
               initialServiceName={seoSeedInput.serviceName}
               initialCategory={seoSeedInput.category}
               history={seoHistory}
-              onGenerated={(pkg) => setSeoHistory((prev) => [pkg, ...prev])}
+              onGenerated={handleSeoGenerated}
               onNotify={addToast}
             />
           )}
@@ -713,6 +1013,20 @@ export default function App() {
           </div>
         </div>
       )}
+
+      <GoogleAuthModal
+        isOpen={isAuthModalOpen}
+        initialTab={authModalTab}
+        onClose={() => setIsAuthModalOpen(false)}
+        onSuccess={(mode, email) => {
+          addToast(
+            mode === 'signup' ? 'Google Workspace Created' : 'Signed In with Google',
+            email
+              ? `Cloud sync active for ${email}.`
+              : 'Your RankFlow AI workspace is synced with Firestore.'
+          );
+        }}
+      />
 
       <OfflineIndicator />
       <ToastContainer toasts={toasts} onDismiss={dismissToast} />

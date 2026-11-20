@@ -98,7 +98,7 @@ export function ClientFastTrackPortal({
         ? `Namaste ${contactName.trim()}, Shri Shyam Consulting (${region}) has assigned Priority #1 VIP routing for ${companyName.trim()}. Our Staffing & Compliance Proposal for "${requirement.trim()}" has been sent to ${email.trim()}.`
         : `Hello ${contactName.trim()}, Shri Shyam Consulting AI Lab (${region}) has received ${companyName.trim()}'s automation mandate ("${requirement.trim()}"). Architecture brief emailed to ${email.trim()} and AI Screening is scheduled.`,
       emailSubject: `Priority #1 VIP Proposal (${region}): ${serviceTrack} — ${companyName.trim()}`,
-      emailBody: `Dear ${contactName.trim()},\n\nThank you for connecting with Shri Shyam Consulting via our Client Fast-Track Portal.\n\nTarget Region: ${region}\nRequirement: ${requirement.trim()}\nAssigned Track: ${serviceTrack}\nSLA: Dedicated Lead Consultant response within 15 minutes.\n\nWarm regards,\nShri Shyam Consulting · PAN India Desk\nWeb: https://www.shrishyamconsulting.in\nGoogle Business Profile: https://share.google/lpfED2zhNx6e5Te5m`,
+      emailBody: `Dear ${contactName.trim()},\n\nThank you for connecting with Shri Shyam Consulting via our Client Fast-Track Portal.\n\nTarget Region: ${region}\nRequirement: ${requirement.trim()}\nAssigned Track: ${serviceTrack}\nSLA: Dedicated Lead Consultant response within 15 minutes.\n\nWarm regards,\nShri Shyam Consulting · PAN India Desk\nWeb: https://www.shrishyamconsulting.in\nGoogle Profile: https://share.google/sZOsh81zkZOerljSO\nGoogle Business Profile: https://share.google/lpfED2zhNx6e5Te5m`,
       createdAt: 'Just now',
       webhookSynced: webhookEnabled,
     };

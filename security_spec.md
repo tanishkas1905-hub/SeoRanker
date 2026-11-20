@@ -1,10 +1,10 @@
 # Firestore Security Specification (Phase 0)
 
 ## Data Invariants
-1. Every user profile (`/users/{userId}`) and user-owned subcollection (`/users/{userId}/leads/{leadId}`, `/keywords/{keywordId}`, `/seoPackages/{seoId}`, `/checklist/{itemId}`) is strictly isolated to `request.auth.uid == userId` with verified email (`request.auth.token.email_verified == true`).
+1. Every user profile (`/users/{userId}`) and user-owned subcollection (`/users/{userId}/leads/{leadId}`, `/keywords/{keywordId}`, `/seoPackages/{seoId}`, `/checklist/{itemId}`, `/seoAudits/{auditId}`) is strictly isolated to `request.auth.uid == userId` with verified email (`request.auth.token.email_verified == true`).
 2. Unauthenticated users and users with unverified email tokens receive `PERMISSION_DENIED` on all reads and writes.
-3. No user can read, list, create, update, or delete another user's profile, leads (PII: email/phone), keywords, SEO packages, or checklist items.
-4. All document IDs (`userId`, `leadId`, `keywordId`, `seoId`, `itemId`) must match `^[a-zA-Z0-9_\-]+$` and be `<= 128` characters.
+3. No user can read, list, create, update, or delete another user's profile, leads (PII: email/phone), keywords, SEO packages, checklist items, or SEO audits.
+4. All document IDs (`userId`, `leadId`, `keywordId`, `seoId`, `itemId`, `auditId`) must match `^[a-zA-Z0-9_\-]+$` and be `<= 128` characters.
 5. `ownerId` / `uid` and `createdAt` are immutable after creation; `createdAt` and `updatedAt` must equal `request.time`.
 6. Ghost / shadow fields outside the explicit allowlist (`keys().hasOnly(...)`) are rejected on create and update.
 

@@ -1,5 +1,6 @@
 export type NavSection =
   | 'dashboard'
+  | 'seo-audit'
   | 'seo-generator'
   | 'local-seo'
   | 'crm-pipeline'
@@ -103,4 +104,82 @@ export interface ToastItem {
   title: string;
   description?: string;
   variant: 'success' | 'error' | 'info';
+}
+
+export type AuditSeverity = 'Pass' | 'Warning' | 'Critical';
+
+export interface AuditHeadingNode {
+  level: 1 | 2 | 3 | 4 | 5 | 6;
+  text: string;
+}
+
+export interface AuditImageItem {
+  src: string;
+  alt: string;
+  status: 'valid' | 'empty' | 'missing';
+}
+
+export interface SeoAuditResult {
+  id: string;
+  url: string;
+  finalUrl: string;
+  httpStatus: number;
+  responseTimeMs: number;
+  auditedAt: string;
+  passedChecks: number;
+  totalChecks: number;
+  meta: {
+    status: AuditSeverity;
+    title: string;
+    titleLength: number;
+    description: string;
+    descriptionLength: number;
+    canonical: string;
+    robots: string;
+    viewport: string;
+    ogTitle: string;
+    ogDescription: string;
+    ogImage: string;
+    twitterCard: string;
+  };
+  headings: {
+    status: AuditSeverity;
+    totalCount: number;
+    h1Count: number;
+    h2Count: number;
+    h3Count: number;
+    h4Count: number;
+    h5Count: number;
+    h6Count: number;
+    skippedTransitions: string[];
+    nodes: AuditHeadingNode[];
+  };
+  images: {
+    status: AuditSeverity;
+    totalCount: number;
+    withAltCount: number;
+    emptyAltCount: number;
+    missingAltCount: number;
+    items: AuditImageItem[];
+  };
+  recommendations: string[];
+}
+
+export type AutopilotCadence = 'manual' | 'daily' | '3days' | 'weekly';
+
+export interface GrowthCyclePack {
+  id: string;
+  focusZone: string;
+  generatedAt: string;
+  gbpPost: {
+    headline: string;
+    body: string;
+    ctaLabel: string;
+    ctaUrl: string;
+  };
+  newKeywords: Omit<KeywordRank, 'id' | 'lastUpdated'>[];
+  seoPackage: SeoPackage;
+  trafficTask: Omit<ChecklistItem, 'id' | 'completed'>;
+  keywordsPromoted: number;
+  trafficLiftEstimate: number;
 }

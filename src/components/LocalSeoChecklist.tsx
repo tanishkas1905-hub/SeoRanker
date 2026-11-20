@@ -28,6 +28,7 @@ const CATEGORIES: readonly ('All' | ChecklistCategory)[] = [
 ];
 
 const GBP_SHARE_URL = 'https://share.google/lpfED2zhNx6e5Te5m';
+const GBP_KNOWLEDGE_URL = 'https://share.google/sZOsh81zkZOerljSO';
 const WEBSITE_URL = 'https://www.shrishyamconsulting.in';
 
 const GBP_SCHEMA_SNIPPET = `<script type="application/ld+json">
@@ -37,7 +38,7 @@ ${JSON.stringify(
     '@type': 'ProfessionalService',
     name: 'Shri Shyam Consulting',
     url: WEBSITE_URL,
-    sameAs: [GBP_SHARE_URL],
+    sameAs: [GBP_KNOWLEDGE_URL, GBP_SHARE_URL],
     areaServed: ['Chhattisgarh', 'India'],
     address: {
       '@type': 'PostalAddress',
@@ -59,7 +60,7 @@ ${JSON.stringify(
 </script>`;
 
 const REVIEW_TEMPLATE =
-  'Namaste! Thank you for partnering with Shri Shyam Consulting (www.shrishyamconsulting.in). Your feedback helps businesses across Durg, Chhattisgarh & PAN India discover reliable HR & AI Automation solutions. Please share a quick review on our Google Business Profile: https://share.google/lpfED2zhNx6e5Te5m';
+  'Namaste! Thank you for partnering with Shri Shyam Consulting (www.shrishyamconsulting.in). Your feedback helps businesses across Durg, Chhattisgarh & PAN India discover reliable HR & AI Automation solutions. Please share a quick review on our Google Business Profile: https://share.google/sZOsh81zkZOerljSO';
 
 export function LocalSeoChecklist({
   items,
@@ -133,13 +134,24 @@ export function LocalSeoChecklist({
             </a>
 
             <a
-              href={GBP_SHARE_URL}
+              href={GBP_KNOWLEDGE_URL}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg transition-colors whitespace-nowrap shrink-0"
             >
               <MapPin className="w-3.5 h-3.5" />
-              <span>Open Google Business Profile</span>
+              <span>Google Search Profile</span>
+              <ExternalLink className="w-3 h-3" />
+            </a>
+
+            <a
+              href={GBP_SHARE_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors whitespace-nowrap shrink-0"
+            >
+              <MapPin className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+              <span>GBP Listing</span>
               <ExternalLink className="w-3 h-3" />
             </a>
           </div>

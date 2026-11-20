@@ -388,7 +388,10 @@ export const INITIAL_SEO_SAMPLE: SeoPackage = {
         '@type': 'ProfessionalService',
         name: 'Shri Shyam Consulting',
         url: 'https://www.shrishyamconsulting.in',
-        sameAs: ['https://share.google/lpfED2zhNx6e5Te5m'],
+        sameAs: [
+          'https://share.google/sZOsh81zkZOerljSO',
+          'https://share.google/lpfED2zhNx6e5Te5m',
+        ],
         areaServed: 'India',
         address: {
           '@type': 'PostalAddress',

@@ -381,6 +381,196 @@
         "createdAt",
         "updatedAt"
       ]
+    },
+    "SeoAudit": {
+      "title": "SeoAudit",
+      "description": "On-page SEO audit result analyzing meta tags, heading hierarchy, and image alt text for a URL.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 64,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "ownerId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "url": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500
+        },
+        "finalUrl": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500
+        },
+        "httpStatus": {
+          "type": "integer"
+        },
+        "responseTimeMs": {
+          "type": "integer"
+        },
+        "auditedAtLabel": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 60
+        },
+        "passedChecks": {
+          "type": "integer"
+        },
+        "totalChecks": {
+          "type": "integer"
+        },
+        "metaStatus": {
+          "type": "string",
+          "enum": ["Pass", "Warning", "Critical"]
+        },
+        "metaTitle": {
+          "type": "string",
+          "maxLength": 300
+        },
+        "metaTitleLength": {
+          "type": "integer"
+        },
+        "metaDescription": {
+          "type": "string",
+          "maxLength": 600
+        },
+        "metaDescriptionLength": {
+          "type": "integer"
+        },
+        "canonical": {
+          "type": "string",
+          "maxLength": 500
+        },
+        "robots": {
+          "type": "string",
+          "maxLength": 120
+        },
+        "viewport": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "ogTitle": {
+          "type": "string",
+          "maxLength": 300
+        },
+        "ogDescription": {
+          "type": "string",
+          "maxLength": 600
+        },
+        "ogImage": {
+          "type": "string",
+          "maxLength": 500
+        },
+        "twitterCard": {
+          "type": "string",
+          "maxLength": 120
+        },
+        "headingsStatus": {
+          "type": "string",
+          "enum": ["Pass", "Warning", "Critical"]
+        },
+        "headingsTotalCount": {
+          "type": "integer"
+        },
+        "h1Count": {
+          "type": "integer"
+        },
+        "h2Count": {
+          "type": "integer"
+        },
+        "h3Count": {
+          "type": "integer"
+        },
+        "h4Count": {
+          "type": "integer"
+        },
+        "h5Count": {
+          "type": "integer"
+        },
+        "h6Count": {
+          "type": "integer"
+        },
+        "skippedTransitions": {
+          "type": "array"
+        },
+        "headingNodesEncoded": {
+          "type": "array"
+        },
+        "imagesStatus": {
+          "type": "string",
+          "enum": ["Pass", "Warning", "Critical"]
+        },
+        "imagesTotalCount": {
+          "type": "integer"
+        },
+        "withAltCount": {
+          "type": "integer"
+        },
+        "emptyAltCount": {
+          "type": "integer"
+        },
+        "missingAltCount": {
+          "type": "integer"
+        },
+        "imageItemsEncoded": {
+          "type": "array"
+        },
+        "recommendations": {
+          "type": "array"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "ownerId",
+        "url",
+        "finalUrl",
+        "httpStatus",
+        "responseTimeMs",
+        "auditedAtLabel",
+        "passedChecks",
+        "totalChecks",
+        "metaStatus",
+        "metaTitle",
+        "metaTitleLength",
+        "metaDescription",
+        "metaDescriptionLength",
+        "canonical",
+        "robots",
+        "viewport",
+        "ogTitle",
+        "ogDescription",
+        "ogImage",
+        "twitterCard",
+        "headingsStatus",
+        "headingsTotalCount",
+        "h1Count",
+        "h2Count",
+        "h3Count",
+        "h4Count",
+        "h5Count",
+        "h6Count",
+        "skippedTransitions",
+        "headingNodesEncoded",
+        "imagesStatus",
+        "imagesTotalCount",
+        "withAltCount",
+        "emptyAltCount",
+        "missingAltCount",
+        "imageItemsEncoded",
+        "recommendations",
+        "createdAt"
+      ]
     }
   },
   "firestore": {
@@ -403,6 +593,10 @@
     "/users/{userId}/checklist/{itemId}": {
       "schema": { "$ref": "#/entities/ChecklistItem" },
       "description": "Local SEO & backlink checklist tasks scoped to the signed-in user."
+    },
+    "/users/{userId}/seoAudits/{auditId}": {
+      "schema": { "$ref": "#/entities/SeoAudit" },
+      "description": "Saved on-page URL SEO audit snapshots scoped to the signed-in user."
     }
   }
 }

@@ -143,6 +143,82 @@ service cloud.firestore {
         && data.updatedAt is timestamp;
     }
 
+    function isValidSeoAuditMeta(data) {
+      return data.metaStatus in ['Pass', 'Warning', 'Critical']
+        && data.metaTitle is string && data.metaTitle.size() <= 300
+        && data.metaTitleLength is int && data.metaTitleLength >= 0 && data.metaTitleLength <= 500
+        && data.metaDescription is string && data.metaDescription.size() <= 600
+        && data.metaDescriptionLength is int && data.metaDescriptionLength >= 0 && data.metaDescriptionLength <= 1000
+        && data.canonical is string && data.canonical.size() <= 500
+        && data.robots is string && data.robots.size() <= 120
+        && data.viewport is string && data.viewport.size() <= 200
+        && data.ogTitle is string && data.ogTitle.size() <= 300
+        && data.ogDescription is string && data.ogDescription.size() <= 600
+        && data.ogImage is string && data.ogImage.size() <= 500
+        && data.twitterCard is string && data.twitterCard.size() <= 120;
+    }
+
+    function isValidSeoAuditHeadingsImages(data) {
+      return data.headingsStatus in ['Pass', 'Warning', 'Critical']
+        && data.headingsTotalCount is int && data.headingsTotalCount >= 0 && data.headingsTotalCount <= 5000
+        && data.h1Count is int && data.h1Count >= 0 && data.h1Count <= 1000
+        && data.h2Count is int && data.h2Count >= 0 && data.h2Count <= 1000
+        && data.h3Count is int && data.h3Count >= 0 && data.h3Count <= 1000
+        && data.h4Count is int && data.h4Count >= 0 && data.h4Count <= 1000
+        && data.h5Count is int && data.h5Count >= 0 && data.h5Count <= 1000
+        && data.h6Count is int && data.h6Count >= 0 && data.h6Count <= 1000
+        && data.skippedTransitions is list && data.skippedTransitions.size() >= 1 && data.skippedTransitions.size() <= 20
+        && data.skippedTransitions[0] is string && data.skippedTransitions[0].size() <= 160
+        && data.headingNodesEncoded is list && data.headingNodesEncoded.size() >= 1 && data.headingNodesEncoded.size() <= 30
+        && data.headingNodesEncoded[0] is string && data.headingNodesEncoded[0].size() <= 300
+        && data.imagesStatus in ['Pass', 'Warning', 'Critical']
+        && data.imagesTotalCount is int && data.imagesTotalCount >= 0 && data.imagesTotalCount <= 5000
+        && data.withAltCount is int && data.withAltCount >= 0 && data.withAltCount <= 5000
+        && data.emptyAltCount is int && data.emptyAltCount >= 0 && data.emptyAltCount <= 5000
+        && data.missingAltCount is int && data.missingAltCount >= 0 && data.missingAltCount <= 5000
+        && data.imageItemsEncoded is list && data.imageItemsEncoded.size() >= 1 && data.imageItemsEncoded.size() <= 25
+        && data.imageItemsEncoded[0] is string && data.imageItemsEncoded[0].size() <= 600;
+    }
+
+    function isValidSeoAudit(data, userId, auditId) {
+      return data.keys().hasAll([
+        'id', 'ownerId', 'url', 'finalUrl', 'httpStatus', 'responseTimeMs',
+        'auditedAtLabel', 'passedChecks', 'totalChecks', 'metaStatus',
+        'metaTitle', 'metaTitleLength', 'metaDescription', 'metaDescriptionLength',
+        'canonical', 'robots', 'viewport', 'ogTitle', 'ogDescription',
+        'ogImage', 'twitterCard', 'headingsStatus', 'headingsTotalCount',
+        'h1Count', 'h2Count', 'h3Count', 'h4Count', 'h5Count', 'h6Count',
+        'skippedTransitions', 'headingNodesEncoded', 'imagesStatus',
+        'imagesTotalCount', 'withAltCount', 'emptyAltCount', 'missingAltCount',
+        'imageItemsEncoded', 'recommendations', 'createdAt'
+      ])
+        && data.keys().hasOnly([
+          'id', 'ownerId', 'url', 'finalUrl', 'httpStatus', 'responseTimeMs',
+          'auditedAtLabel', 'passedChecks', 'totalChecks', 'metaStatus',
+          'metaTitle', 'metaTitleLength', 'metaDescription', 'metaDescriptionLength',
+          'canonical', 'robots', 'viewport', 'ogTitle', 'ogDescription',
+          'ogImage', 'twitterCard', 'headingsStatus', 'headingsTotalCount',
+          'h1Count', 'h2Count', 'h3Count', 'h4Count', 'h5Count', 'h6Count',
+          'skippedTransitions', 'headingNodesEncoded', 'imagesStatus',
+          'imagesTotalCount', 'withAltCount', 'emptyAltCount', 'missingAltCount',
+          'imageItemsEncoded', 'recommendations', 'createdAt'
+        ])
+        && data.id is string && data.id == auditId && isValidId(data.id)
+        && data.ownerId is string && data.ownerId == userId
+        && data.url is string && data.url.size() >= 1 && data.url.size() <= 500
+        && data.finalUrl is string && data.finalUrl.size() >= 1 && data.finalUrl.size() <= 500
+        && data.httpStatus is int && data.httpStatus >= 100 && data.httpStatus <= 599
+        && data.responseTimeMs is int && data.responseTimeMs >= 0 && data.responseTimeMs <= 120000
+        && data.auditedAtLabel is string && data.auditedAtLabel.size() >= 1 && data.auditedAtLabel.size() <= 60
+        && data.passedChecks is int && data.passedChecks >= 0 && data.passedChecks <= 50
+        && data.totalChecks is int && data.totalChecks >= 1 && data.totalChecks <= 50
+        && data.recommendations is list && data.recommendations.size() >= 1 && data.recommendations.size() <= 20
+        && data.recommendations[0] is string && data.recommendations[0].size() <= 300
+        && data.createdAt is timestamp
+        && isValidSeoAuditMeta(data)
+        && isValidSeoAuditHeadingsImages(data);
+    }
+
     match /users/{userId} {
       allow get: if isOwner(userId) && isValidId(userId);
       allow create: if isOwner(userId) && isValidId(userId)
@@ -180,7 +256,12 @@ service cloud.firestore {
         allow create: if isOwner(userId) && isValidId(keywordId)
           && isValidKeywordRank(incoming(), userId, keywordId)
           && incoming().createdAt == request.time;
-        allow update: if false;
+        allow update: if isOwner(userId) && isValidId(keywordId)
+          && isValidKeywordRank(incoming(), userId, keywordId)
+          && incoming().id == existing().id
+          && incoming().ownerId == existing().ownerId
+          && incoming().createdAt == existing().createdAt
+          && incoming().diff(existing()).affectedKeys().hasOnly(['rank', 'previousRank', 'lastUpdated']);
         allow delete: if isOwner(userId) && isValidId(keywordId);
       }
 
@@ -209,6 +290,16 @@ service cloud.firestore {
           && incoming().updatedAt == request.time
           && incoming().diff(existing()).affectedKeys().hasOnly(['completed', 'updatedAt']);
         allow delete: if isOwner(userId) && isValidId(itemId);
+      }
+
+      match /seoAudits/{auditId} {
+        allow get: if isOwner(userId) && isValidId(auditId);
+        allow list: if isOwner(userId) && resource.data.ownerId == request.auth.uid;
+        allow create: if isOwner(userId) && isValidId(auditId)
+          && isValidSeoAudit(incoming(), userId, auditId)
+          && incoming().createdAt == request.time;
+        allow update: if false;
+        allow delete: if isOwner(userId) && isValidId(auditId);
       }
     }
   }

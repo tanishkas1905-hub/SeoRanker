@@ -132,7 +132,7 @@ export function SeoPerformanceReport({
       items.push(`Complete high-impact Local SEO action: ${pendingTasks[0].title}.`);
     }
     items.push(
-      'Maintain automated WhatsApp + Email Fast-Track dispatch and collect verified client reviews on Google Business Profile (share.google/lpfED2zhNx6e5Te5m).'
+      'Maintain automated WhatsApp + Email Fast-Track dispatch and collect verified client reviews on Google Business Profile (share.google/sZOsh81zkZOerljSO).'
     );
     return items;
   }, [checklist, keywords]);
@@ -146,7 +146,7 @@ export function SeoPerformanceReport({
     return [
       'SEO PERFORMANCE REPORT — SHRI SHYAM CONSULTING',
       `Prepared For: ${preparedFor}`,
-      'Website: https://www.shrishyamconsulting.in | GBP: https://share.google/lpfED2zhNx6e5Te5m',
+      'Website: https://www.shrishyamconsulting.in | Google Profile: https://share.google/sZOsh81zkZOerljSO | GBP: https://share.google/lpfED2zhNx6e5Te5m',
       `Reporting Month: November 2026 (PAN India Coverage)`,
       '',
       'MONTHLY ORGANIC GROWTH SUMMARY',
@@ -390,7 +390,7 @@ export function SeoPerformanceReport({
       doc.setFontSize(7.5);
       doc.setTextColor(100, 116, 139);
       doc.text(
-        'Shri Shyam Consulting · Paras Complex, Near Gurudwara Road, Durg, CG · https://www.shrishyamconsulting.in · GBP: https://share.google/lpfED2zhNx6e5Te5m',
+        'Shri Shyam Consulting · Durg, CG · https://www.shrishyamconsulting.in · Google: https://share.google/sZOsh81zkZOerljSO',
         margin,
         285
       );
